@@ -9,6 +9,7 @@ from utils.sensors import SensorSimulator
 from utils.alerts import AlertSystem
 from utils.recommendations import WaterQualityRecommender
 from utils.maintenance import MaintenanceScheduler
+from utils.remote_access import remote_access
 
 # Page configuration
 st.set_page_config(
@@ -17,10 +18,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Load custom CSS
-with open('assets/styles.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Initialize components
 @st.cache_resource
@@ -89,12 +86,12 @@ def render_maintenance_section():
     
     with tab3:
         st.subheader("Maintenance History")
-        upcoming_tasks = maintenance.get_upcoming_tasks(days_ahead=365)  # Get all tasks
-        if upcoming_tasks:
+        tasks = maintenance.get_upcoming_tasks(days_ahead=365)  # Get all tasks
+        if tasks:
             task_id = st.selectbox(
                 "Select Task",
-                options=[task['id'] for task in upcoming_tasks],
-                format_func=lambda x: next(task['task_name'] for task in upcoming_tasks if task['id'] == x)
+                options=[task['id'] for task in tasks],
+                format_func=lambda x: next(task['task_name'] for task in tasks if task['id'] == x)
             )
             
             history = maintenance.get_task_history(task_id)
@@ -108,6 +105,54 @@ def render_maintenance_section():
                 st.info("No history found for this task.")
         else:
             st.info("No tasks found. Add some tasks to view their history.")
+
+def render_remote_access_section():
+    st.header("🔒 Remote Access")
+    
+    # Get connection information
+    connection_info = remote_access.get_connection_info()
+    
+    # Display connection status and information
+    st.success("✅ Remote Access is Active")
+    
+    # Connection Information
+    with st.expander("📡 Connection Information", expanded=True):
+        st.write("**Access URL:**")
+        st.code(connection_info['url'])
+        st.write("""
+        **How to Access:**
+        1. Share this URL with authorized users
+        2. The monitoring system can be accessed from any web browser
+        3. All data is viewed in real-time through secure HTTPS
+        """)
+        
+        st.info("""
+        **Security Notes:**
+        - All connections are encrypted using HTTPS
+        - Access is read-only by default
+        - Monitor access logs below for security
+        """)
+    
+    # Access Logs
+    st.subheader("📊 Recent Access Logs")
+    logs = remote_access.get_access_logs()
+    if logs:
+        for log in logs:
+            st.text(f"{log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} - {log['client']}")
+    else:
+        st.info("No access logs yet")
+
+    # Monitoring Options
+    st.subheader("⚙️ Monitoring Settings")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.checkbox("Enable Email Notifications", 
+                   help="Send email notifications when someone accesses the system")
+    with col2:
+        st.number_input("Auto-refresh Interval (seconds)", 
+                       min_value=5, 
+                       max_value=60, 
+                       value=10)
 
 def main():
     st.title("🌊 Hot Tub Monitoring System")
@@ -129,7 +174,7 @@ def main():
             st.success("Calibration updated successfully!")
 
     # Main content area
-    tab1, tab2 = st.tabs(["Monitoring", "Maintenance"])
+    tab1, tab2, tab3 = st.tabs(["Monitoring", "Maintenance", "Remote Access"])
     
     with tab1:
         col1, col2, col3, col4 = st.columns(4)
@@ -223,6 +268,9 @@ def main():
     
     with tab2:
         render_maintenance_section()
+        
+    with tab3:
+        render_remote_access_section()
 
 if __name__ == "__main__":
     main()
