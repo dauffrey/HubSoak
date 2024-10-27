@@ -39,7 +39,11 @@ class Database:
                         ph_level FLOAT,
                         temperature FLOAT,
                         turbidity FLOAT,
-                        orp_level FLOAT
+                        orp_level FLOAT,
+                        conductivity FLOAT DEFAULT 0.0,
+                        free_chlorine FLOAT DEFAULT 0.0,
+                        total_chlorine FLOAT DEFAULT 0.0,
+                        bromine FLOAT DEFAULT 0.0
                     );
                     
                     CREATE TABLE IF NOT EXISTS sensor_calibration (
@@ -51,40 +55,10 @@ class Database:
                     );
                 """)
                 
-                # Add new columns if they don't exist
+                # Force recreation of bromine column if it doesn't exist
                 cur.execute("""
                     DO $$
                     BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 
-                            FROM information_schema.columns 
-                            WHERE table_name='sensor_readings' 
-                            AND column_name='conductivity'
-                        ) THEN
-                            ALTER TABLE sensor_readings 
-                            ADD COLUMN conductivity FLOAT DEFAULT 0.0;
-                        END IF;
-
-                        IF NOT EXISTS (
-                            SELECT 1 
-                            FROM information_schema.columns 
-                            WHERE table_name='sensor_readings' 
-                            AND column_name='free_chlorine'
-                        ) THEN
-                            ALTER TABLE sensor_readings 
-                            ADD COLUMN free_chlorine FLOAT DEFAULT 0.0;
-                        END IF;
-
-                        IF NOT EXISTS (
-                            SELECT 1 
-                            FROM information_schema.columns 
-                            WHERE table_name='sensor_readings' 
-                            AND column_name='total_chlorine'
-                        ) THEN
-                            ALTER TABLE sensor_readings 
-                            ADD COLUMN total_chlorine FLOAT DEFAULT 0.0;
-                        END IF;
-
                         IF NOT EXISTS (
                             SELECT 1 
                             FROM information_schema.columns 
@@ -96,6 +70,7 @@ class Database:
                         END IF;
                     END $$;
                 """)
+                self.conn.commit()
         except Exception as e:
             raise Exception(f"Error creating/updating tables: {str(e)}")
 
