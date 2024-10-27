@@ -54,10 +54,11 @@ def render_maintenance_section():
                         st.rerun()
     
     with tab2:
-        st.button("📋 Add Default Tasks", use_container_width=True, 
-                 on_click=lambda: [maintenance.add_task(task['name'], task['description'], 
-                                                      task['frequency_days']) 
-                                 for task in maintenance.get_default_tasks()])
+        if st.button("📋 Add Default Tasks", use_container_width=True):
+            for task in maintenance.get_default_tasks():
+                maintenance.add_task(task['name'], task['description'], task['frequency_days'])
+            st.success("Default tasks added!")
+            st.rerun()
         
         # Custom task form
         with st.form("new_task_form"):
@@ -215,7 +216,7 @@ def main():
             # Historical visualization
             if show_historical:
                 st.header("📈 History")
-                historical_data = db.get_historical_data(hours=24)
+                historical_data = db.get_historical_data(hours=12)  # Changed from 24 to 12 hours
                 
                 if historical_data:
                     df = pd.DataFrame(historical_data)
@@ -242,7 +243,7 @@ def main():
                         ))
                     
                     fig.update_layout(
-                        title='24-Hour History',
+                        title='12-Hour History',  # Changed from 24-Hour to 12-Hour
                         height=400,
                         hovermode='x unified',
                         showlegend=True,
