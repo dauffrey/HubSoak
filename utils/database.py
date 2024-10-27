@@ -31,11 +31,12 @@ class Database:
     def _create_tables(self):
         try:
             with self.get_cursor() as cur:
-                # Drop existing table and constraints
+                # Drop both tables to ensure clean recreation
                 cur.execute("""
                     DROP TABLE IF EXISTS sensor_calibration CASCADE;
+                    DROP TABLE IF EXISTS sensor_readings CASCADE;
                     
-                    CREATE TABLE IF NOT EXISTS sensor_readings (
+                    CREATE TABLE sensor_readings (
                         id SERIAL PRIMARY KEY,
                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         ph_level FLOAT,
@@ -54,10 +55,10 @@ class Database:
                         offset_value FLOAT,
                         scale_factor FLOAT,
                         last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        CONSTRAINT unique_sensor_type UNIQUE (sensor_type)
+                        CONSTRAINT sensor_type_unique UNIQUE (sensor_type)
                     );
 
-                    -- Initialize default calibration values
+                    -- Initialize calibration values
                     INSERT INTO sensor_calibration (sensor_type, offset_value, scale_factor)
                     VALUES 
                         ('ph', 0.0, 1.0),
@@ -68,7 +69,7 @@ class Database:
                         ('free_chlorine', 0.0, 1.0),
                         ('total_chlorine', 0.0, 1.0),
                         ('bromine', 0.0, 1.0)
-                    ON CONFLICT ON CONSTRAINT unique_sensor_type
+                    ON CONFLICT ON CONSTRAINT sensor_type_unique
                     DO UPDATE SET 
                         offset_value = EXCLUDED.offset_value,
                         scale_factor = EXCLUDED.scale_factor,
@@ -112,16 +113,14 @@ class Database:
                 cur.execute("""
                     INSERT INTO sensor_calibration (sensor_type, offset_value, scale_factor)
                     VALUES (%s, %s, %s)
-                    ON CONFLICT ON CONSTRAINT unique_sensor_type
+                    ON CONFLICT ON CONSTRAINT sensor_type_unique
                     DO UPDATE SET 
                         offset_value = EXCLUDED.offset_value,
                         scale_factor = EXCLUDED.scale_factor,
                         last_calibrated = CURRENT_TIMESTAMP
                     """, (sensor_type, offset, scale))
-        except psycopg2.Error as e:
-            raise Exception(f"Database error updating calibration: {str(e)}")
         except Exception as e:
-            raise Exception(f"Unexpected error updating calibration: {str(e)}")
+            raise Exception(f"Error updating calibration: {str(e)}")
 
     def __del__(self):
         """Ensure database connection is closed when object is destroyed."""
