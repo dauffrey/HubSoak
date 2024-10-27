@@ -16,13 +16,25 @@ class Database:
 
     def _create_tables(self):
         with self.conn.cursor() as cur:
+            # Add orp_level column to existing table if it doesn't exist
             cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='sensor_readings' AND column_name='orp_level'
+                    ) THEN
+                        ALTER TABLE sensor_readings ADD COLUMN orp_level FLOAT;
+                    END IF;
+                END $$;
+                
                 CREATE TABLE IF NOT EXISTS sensor_readings (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     ph_level FLOAT,
                     temperature FLOAT,
-                    turbidity FLOAT
+                    turbidity FLOAT,
+                    orp_level FLOAT
                 );
                 
                 CREATE TABLE IF NOT EXISTS sensor_calibration (
@@ -35,18 +47,18 @@ class Database:
             """)
             self.conn.commit()
 
-    def log_reading(self, ph: float, temp: float, turbidity: float):
+    def log_reading(self, ph: float, temp: float, turbidity: float, orp: float):
         with self.conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO sensor_readings (ph_level, temperature, turbidity) VALUES (%s, %s, %s)",
-                (ph, temp, turbidity)
+                "INSERT INTO sensor_readings (ph_level, temperature, turbidity, orp_level) VALUES (%s, %s, %s, %s)",
+                (ph, temp, turbidity, orp)
             )
             self.conn.commit()
 
     def get_historical_data(self, hours: int = 24) -> List[Tuple]:
         with self.conn.cursor() as cur:
             cur.execute("""
-                SELECT timestamp, ph_level, temperature, turbidity 
+                SELECT timestamp, ph_level, temperature, turbidity, orp_level 
                 FROM sensor_readings 
                 WHERE timestamp > NOW() - INTERVAL '%s hours'
                 ORDER BY timestamp DESC

@@ -37,7 +37,7 @@ def main():
         show_historical = st.checkbox("Show Historical Data", True)
         
         st.header("Sensor Calibration")
-        sensor_type = st.selectbox("Select Sensor", ["ph", "temperature", "turbidity"])
+        sensor_type = st.selectbox("Select Sensor", ["ph", "temperature", "turbidity", "orp"])
         offset = st.number_input(f"{sensor_type.title()} Offset", -10.0, 10.0, 0.0, 0.1)
         scale = st.number_input(f"{sensor_type.title()} Scale Factor", 0.1, 2.0, 1.0, 0.1)
         
@@ -47,7 +47,7 @@ def main():
             st.success("Calibration updated successfully!")
 
     # Main content area
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     # Get current readings
     readings = sensor_simulator.get_readings()
@@ -74,13 +74,20 @@ def main():
             value=f"{readings['turbidity']:.1f} NTU",
             delta=f"{readings['turbidity'] - 2.0:.1f} from ideal"
         )
+        
+    with col4:
+        st.metric(
+            label="ORP Level",
+            value=f"{readings['orp']:.1f} mV",
+            delta=f"{readings['orp'] - 700.0:.1f} mV from ideal"
+        )
 
     # Process and display alerts
     current_alerts = alert_system.process_alerts(alerts)
     alert_system.display_alerts()
 
     # Log readings to database
-    db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'])
+    db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'])
 
     # Historical data visualization
     if show_historical:
@@ -89,7 +96,7 @@ def main():
         
         if historical_data:
             df = pd.DataFrame(historical_data, 
-                            columns=['timestamp', 'ph_level', 'temperature', 'turbidity'])
+                            columns=['timestamp', 'ph_level', 'temperature', 'turbidity', 'orp_level'])
             
             fig = go.Figure()
             
@@ -100,6 +107,8 @@ def main():
                                     name='Temperature', line=dict(color='red')))
             fig.add_trace(go.Scatter(x=df['timestamp'], y=df['turbidity'],
                                     name='Turbidity', line=dict(color='green')))
+            fig.add_trace(go.Scatter(x=df['timestamp'], y=df['orp_level'],
+                                    name='ORP Level', line=dict(color='purple')))
             
             fig.update_layout(
                 title='Sensor Readings Over Time',
