@@ -1,0 +1,51 @@
+/* Custom styles for the hot tub monitoring system */
+.stButton > button {
+    width: 100%;
+    border-radius: 5px;
+}
+
+.sensor-normal {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.sensor-warning {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.sensor-alert {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Responsive grid layouts */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.sensor-card {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Custom metric styling */
+.metric-container {
+    text-align: center;
+    padding: 1rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.metric-label {
+    font-size: 1rem;
+    color: #6c757d;
+}
