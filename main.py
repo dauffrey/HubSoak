@@ -7,6 +7,7 @@ import pandas as pd
 from utils.database import Database
 from utils.sensors import SensorSimulator
 from utils.alerts import AlertSystem
+from utils.recommendations import WaterQualityRecommender
 
 # Page configuration
 st.set_page_config(
@@ -23,9 +24,9 @@ with open('assets/styles.css') as f:
 # Initialize components
 @st.cache_resource
 def init_components():
-    return Database(), SensorSimulator(), AlertSystem()
+    return Database(), SensorSimulator(), AlertSystem(), WaterQualityRecommender()
 
-db, sensor_simulator, alert_system = init_components()
+db, sensor_simulator, alert_system, recommender = init_components()
 
 def main():
     st.title("🌊 Hot Tub Monitoring System")
@@ -85,6 +86,18 @@ def main():
     # Process and display alerts
     current_alerts = alert_system.process_alerts(alerts)
     alert_system.display_alerts()
+
+    # Display water quality recommendations
+    st.header("📋 Water Quality Recommendations")
+    recommendations = recommender.get_recommendations(readings)
+    
+    for rec in recommendations:
+        if rec['status'] == 'optimal':
+            st.success(f"✅ {rec['parameter']}: {rec['action']}")
+        else:
+            with st.expander(f"⚠️ {rec['parameter']} ({rec['status'].title()})"):
+                st.write(f"**Recommended Action:** {rec['action']}")
+                st.info(f"**Details:** {rec['details']}")
 
     # Log readings to database
     db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'])
