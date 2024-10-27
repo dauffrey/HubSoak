@@ -1,51 +1,105 @@
 /* Custom styles for the hot tub monitoring system */
 .stButton > button {
     width: 100%;
-    border-radius: 5px;
+    border-radius: 10px;
+    min-height: 45px;
+    font-size: 16px;
+    margin: 5px 0;
 }
 
 .sensor-normal {
     color: #28a745;
     font-weight: bold;
+    font-size: 16px;
 }
 
 .sensor-warning {
     color: #ffc107;
     font-weight: bold;
+    font-size: 16px;
 }
 
 .sensor-alert {
     color: #dc3545;
     font-weight: bold;
+    font-size: 16px;
 }
 
-/* Responsive grid layouts */
+/* Touch-optimized grid layouts */
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: 1fr;
     gap: 1rem;
     padding: 1rem;
 }
 
 .sensor-card {
     background-color: #f8f9fa;
-    padding: 1rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
 }
 
-/* Custom metric styling */
+/* Optimized metric styling for touch */
 .metric-container {
     text-align: center;
-    padding: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .metric-value {
-    font-size: 2rem;
+    font-size: 24px;
     font-weight: bold;
 }
 
 .metric-label {
-    font-size: 1rem;
+    font-size: 18px;
     color: #6c757d;
+}
+
+/* Touch-optimized form inputs */
+.stTextInput input, .stNumberInput input, .stTextArea textarea {
+    font-size: 16px !important;
+    padding: 12px !important;
+    min-height: 45px;
+}
+
+.stSelectbox select {
+    font-size: 16px !important;
+    min-height: 45px;
+}
+
+/* Optimize tabs for touch */
+.stTabs button {
+    font-size: 16px !important;
+    padding: 12px 24px !important;
+}
+
+/* Optimize sliders for touch */
+.stSlider div[data-baseweb="slider"] {
+    height: 24px !important;
+}
+
+/* Make expanders more touch-friendly */
+.streamlit-expanderHeader {
+    font-size: 16px !important;
+    padding: 15px !important;
+    min-height: 45px;
+}
+
+/* Optimize metrics display */
+[data-testid="stMetricValue"] {
+    font-size: 24px !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 16px !important;
+}
+
+/* Optimize alerts and messages */
+.stAlert {
+    font-size: 16px !important;
+    padding: 15px !important;
+    margin: 10px 0 !important;
 }
