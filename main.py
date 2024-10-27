@@ -53,9 +53,11 @@ def render_maintenance_section():
                     if task['last_completed']:
                         st.write(f"**Last completed:** {task['last_completed'].strftime('%Y-%m-%d')}")
                     
-                    if st.button(f"Mark Complete", key=f"complete_{task['id']}"):
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
                         notes = st.text_input("Add completion notes (optional):", key=f"notes_{task['id']}")
-                        if st.button("Confirm", key=f"confirm_{task['id']}"):
+                    with col2:
+                        if st.button("Mark Complete", key=f"complete_{task['id']}"):
                             maintenance.complete_task(task['id'], notes)
                             st.success("Task marked as completed!")
                             st.rerun()
@@ -78,9 +80,12 @@ def render_maintenance_section():
             frequency = st.number_input("Frequency (days)", min_value=1, value=30)
             
             if st.form_submit_button("Add Task"):
-                maintenance.add_task(task_name, description, frequency)
-                st.success("New task added successfully!")
-                st.rerun()
+                if task_name and description:
+                    maintenance.add_task(task_name, description, frequency)
+                    st.success("New task added successfully!")
+                    st.rerun()
+                else:
+                    st.error("Please fill in both task name and description.")
     
     with tab3:
         st.subheader("Maintenance History")
@@ -129,95 +134,95 @@ def main():
     with tab1:
         col1, col2, col3, col4 = st.columns(4)
         
-        # Get current readings
-        readings = sensor_simulator.get_readings()
-        alerts = sensor_simulator.check_alerts(readings)
-        
-        # Display current readings with metrics
-        with col1:
-            st.metric(
-                label="pH Level",
-                value=f"{readings['ph']:.2f}",
-                delta=f"{readings['ph'] - 7.0:.2f} from neutral"
-            )
-        
-        with col2:
-            st.metric(
-                label="Temperature",
-                value=f"{readings['temperature']:.1f}°C",
-                delta=f"{readings['temperature'] - 37.5:.1f}°C from ideal"
-            )
-        
-        with col3:
-            st.metric(
-                label="Turbidity",
-                value=f"{readings['turbidity']:.1f} NTU",
-                delta=f"{readings['turbidity'] - 2.0:.1f} from ideal"
-            )
+        try:
+            # Get current readings
+            readings = sensor_simulator.get_readings()
+            alerts = sensor_simulator.check_alerts(readings)
             
-        with col4:
-            st.metric(
-                label="ORP Level",
-                value=f"{readings['orp']:.1f} mV",
-                delta=f"{readings['orp'] - 700.0:.1f} mV from ideal"
-            )
-
-        # Process and display alerts
-        current_alerts = alert_system.process_alerts(alerts)
-        alert_system.display_alerts()
-
-        # Display water quality recommendations
-        st.header("📋 Water Quality Recommendations")
-        recommendations = recommender.get_recommendations(readings)
-        
-        for rec in recommendations:
-            if rec['status'] == 'optimal':
-                st.success(f"✅ {rec['parameter']}: {rec['action']}")
-            else:
-                with st.expander(f"⚠️ {rec['parameter']} ({rec['status'].title()})"):
-                    st.write(f"**Recommended Action:** {rec['action']}")
-                    st.info(f"**Details:** {rec['details']}")
-
-        # Log readings to database
-        db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'])
-
-        # Historical data visualization
-        if show_historical:
-            st.header("Historical Data")
-            historical_data = db.get_historical_data(hours=24)
+            # Display current readings with metrics
+            with col1:
+                st.metric(
+                    label="pH Level",
+                    value=f"{readings['ph']:.2f}",
+                    delta=f"{readings['ph'] - 7.0:.2f} from neutral"
+                )
             
-            if historical_data:
-                df = pd.DataFrame(historical_data, 
-                                columns=['timestamp', 'ph_level', 'temperature', 'turbidity', 'orp_level'])
-                
-                fig = go.Figure()
-                
-                # Add traces for each sensor
-                fig.add_trace(go.Scatter(x=df['timestamp'], y=df['ph_level'],
-                                        name='pH Level', line=dict(color='blue')))
-                fig.add_trace(go.Scatter(x=df['timestamp'], y=df['temperature'],
-                                        name='Temperature', line=dict(color='red')))
-                fig.add_trace(go.Scatter(x=df['timestamp'], y=df['turbidity'],
-                                        name='Turbidity', line=dict(color='green')))
-                fig.add_trace(go.Scatter(x=df['timestamp'], y=df['orp_level'],
-                                        name='ORP Level', line=dict(color='purple')))
-                
-                fig.update_layout(
-                    title='Sensor Readings Over Time',
-                    xaxis_title='Time',
-                    yaxis_title='Value',
-                    height=500,
-                    hovermode='x unified'
+            with col2:
+                st.metric(
+                    label="Temperature",
+                    value=f"{readings['temperature']:.1f}°C",
+                    delta=f"{readings['temperature'] - 37.5:.1f}°C from ideal"
+                )
+            
+            with col3:
+                st.metric(
+                    label="Turbidity",
+                    value=f"{readings['turbidity']:.1f} NTU",
+                    delta=f"{readings['turbidity'] - 2.0:.1f} from ideal"
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+            with col4:
+                st.metric(
+                    label="ORP Level",
+                    value=f"{readings['orp']:.1f} mV",
+                    delta=f"{readings['orp'] - 700.0:.1f} mV from ideal"
+                )
+
+            # Process and display alerts
+            current_alerts = alert_system.process_alerts(alerts)
+            alert_system.display_alerts()
+
+            # Display water quality recommendations
+            st.header("📋 Water Quality Recommendations")
+            recommendations = recommender.get_recommendations(readings)
+            
+            for rec in recommendations:
+                if rec['status'] == 'optimal':
+                    st.success(f"✅ {rec['parameter']}: {rec['action']}")
+                else:
+                    with st.expander(f"⚠️ {rec['parameter']} ({rec['status'].title()})"):
+                        st.write(f"**Recommended Action:** {rec['action']}")
+                        st.info(f"**Details:** {rec['details']}")
+
+            # Log readings to database
+            db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'])
+
+            # Historical data visualization
+            if show_historical:
+                st.header("Historical Data")
+                historical_data = db.get_historical_data(hours=24)
+                
+                if historical_data:
+                    # Convert to DataFrame
+                    df = pd.DataFrame(historical_data)
+                    df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 'orp_level']
+                    
+                    fig = go.Figure()
+                    
+                    # Add traces for each sensor
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['ph_level'],
+                                           name='pH Level', line=dict(color='blue')))
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['temperature'],
+                                           name='Temperature', line=dict(color='red')))
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['turbidity'],
+                                           name='Turbidity', line=dict(color='green')))
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['orp_level'],
+                                           name='ORP Level', line=dict(color='purple')))
+                    
+                    fig.update_layout(
+                        title='Sensor Readings Over Time',
+                        xaxis_title='Time',
+                        yaxis_title='Value',
+                        height=500,
+                        hovermode='x unified'
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error loading sensor data: {str(e)}")
     
     with tab2:
         render_maintenance_section()
-
-    # Auto-refresh
-    time.sleep(update_interval)
-    st.rerun()
 
 if __name__ == "__main__":
     main()
