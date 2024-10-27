@@ -16,7 +16,7 @@ class Database:
 
     def _create_tables(self):
         with self.conn.cursor() as cur:
-            # Add orp_level column to existing table if it doesn't exist
+            # Add conductivity column to existing table if it doesn't exist
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS sensor_readings (
                     id SERIAL PRIMARY KEY,
@@ -24,7 +24,8 @@ class Database:
                     ph_level FLOAT,
                     temperature FLOAT,
                     turbidity FLOAT,
-                    orp_level FLOAT
+                    orp_level FLOAT,
+                    conductivity FLOAT
                 );
                 
                 CREATE TABLE IF NOT EXISTS sensor_calibration (
@@ -37,18 +38,18 @@ class Database:
             """)
             self.conn.commit()
 
-    def log_reading(self, ph: float, temp: float, turbidity: float, orp: float):
+    def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, conductivity: float):
         with self.conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO sensor_readings (ph_level, temperature, turbidity, orp_level) VALUES (%s, %s, %s, %s)",
-                (ph, temp, turbidity, orp)
+                "INSERT INTO sensor_readings (ph_level, temperature, turbidity, orp_level, conductivity) VALUES (%s, %s, %s, %s, %s)",
+                (ph, temp, turbidity, orp, conductivity)
             )
             self.conn.commit()
 
     def get_historical_data(self, hours: int = 24) -> List[Tuple]:
         with self.conn.cursor() as cur:
             cur.execute("""
-                SELECT timestamp, ph_level, temperature, turbidity, orp_level 
+                SELECT timestamp, ph_level, temperature, turbidity, orp_level, conductivity 
                 FROM sensor_readings 
                 WHERE timestamp > NOW() - INTERVAL '%s hours'
                 ORDER BY timestamp DESC

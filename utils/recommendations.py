@@ -7,7 +7,8 @@ class WaterQualityRecommender:
             'ph': {'min': 7.2, 'max': 7.6, 'unit': 'pH'},
             'temperature': {'min': 37.0, 'max': 39.0, 'unit': '°C'},
             'turbidity': {'min': 0.5, 'max': 3.0, 'unit': 'NTU'},
-            'orp': {'min': 650, 'max': 750, 'unit': 'mV'}
+            'orp': {'min': 650, 'max': 750, 'unit': 'mV'},
+            'conductivity': {'min': 1200, 'max': 1800, 'unit': 'μS/cm'}
         }
 
     def get_recommendations(self, readings: Dict[str, float]) -> List[Dict[str, str]]:
@@ -68,6 +69,22 @@ class WaterQualityRecommender:
                 'status': 'high',
                 'action': 'Reduce sanitizer addition. Wait for levels to decrease naturally.',
                 'details': 'High ORP may cause skin/eye irritation and equipment damage.'
+            })
+
+        # Conductivity recommendations
+        if readings['conductivity'] < self.optimal_ranges['conductivity']['min']:
+            recommendations.append({
+                'parameter': 'Conductivity',
+                'status': 'low',
+                'action': 'Add mineral balancer to increase TDS levels.',
+                'details': 'Low mineral content may result in poor water conditioning and reduced therapeutic benefits.'
+            })
+        elif readings['conductivity'] > self.optimal_ranges['conductivity']['max']:
+            recommendations.append({
+                'parameter': 'Conductivity',
+                'status': 'high',
+                'action': 'Partially drain and refill with fresh water to reduce mineral content.',
+                'details': 'High mineral content can cause scaling and reduce equipment efficiency.'
             })
 
         # If everything is optimal

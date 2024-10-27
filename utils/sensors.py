@@ -8,7 +8,8 @@ class SensorSimulator:
             'ph': {'offset': 0.0, 'scale': 1.0},
             'temperature': {'offset': 0.0, 'scale': 1.0},
             'turbidity': {'offset': 0.0, 'scale': 1.0},
-            'orp': {'offset': 0.0, 'scale': 1.0}
+            'orp': {'offset': 0.0, 'scale': 1.0},
+            'conductivity': {'offset': 0.0, 'scale': 1.0}
         }
 
     def get_readings(self) -> Dict[str, float]:
@@ -17,7 +18,8 @@ class SensorSimulator:
             'ph': random.uniform(6.8, 7.8),
             'temperature': random.uniform(35.0, 40.0),
             'turbidity': random.uniform(0.5, 5.0),
-            'orp': random.uniform(650.0, 750.0)  # ORP in millivolts (mV)
+            'orp': random.uniform(650.0, 750.0),  # ORP in millivolts (mV)
+            'conductivity': random.uniform(1000.0, 2000.0)  # Conductivity in μS/cm
         }
 
         # Apply calibration
@@ -41,7 +43,8 @@ class SensorSimulator:
             'ph': {'min': 7.0, 'max': 7.8, 'unit': 'pH'},
             'temperature': {'min': 35.0, 'max': 40.0, 'unit': '°C'},
             'turbidity': {'min': 0.0, 'max': 4.0, 'unit': 'NTU'},
-            'orp': {'min': 650.0, 'max': 750.0, 'unit': 'mV'}
+            'orp': {'min': 650.0, 'max': 750.0, 'unit': 'mV'},
+            'conductivity': {'min': 1000.0, 'max': 2000.0, 'unit': 'μS/cm'}
         }
 
         for sensor, value in readings.items():

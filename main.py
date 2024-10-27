@@ -164,7 +164,7 @@ def main():
         show_historical = st.checkbox("Show Historical Data", True)
         
         st.header("Sensor Calibration")
-        sensor_type = st.selectbox("Select Sensor", ["ph", "temperature", "turbidity", "orp"])
+        sensor_type = st.selectbox("Select Sensor", ["ph", "temperature", "turbidity", "orp", "conductivity"])
         offset = st.number_input(f"{sensor_type.title()} Offset", -10.0, 10.0, 0.0, 0.1)
         scale = st.number_input(f"{sensor_type.title()} Scale Factor", 0.1, 2.0, 1.0, 0.1)
         
@@ -177,7 +177,7 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Monitoring", "Maintenance", "Remote Access"])
     
     with tab1:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         
         try:
             # Get current readings
@@ -212,6 +212,13 @@ def main():
                     value=f"{readings['orp']:.1f} mV",
                     delta=f"{readings['orp'] - 700.0:.1f} mV from ideal"
                 )
+                
+            with col5:
+                st.metric(
+                    label="Conductivity",
+                    value=f"{readings['conductivity']:.0f} μS/cm",
+                    delta=f"{readings['conductivity'] - 1500.0:.0f} from ideal"
+                )
 
             # Process and display alerts
             current_alerts = alert_system.process_alerts(alerts)
@@ -230,7 +237,7 @@ def main():
                         st.info(f"**Details:** {rec['details']}")
 
             # Log readings to database
-            db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'])
+            db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'], readings['conductivity'])
 
             # Historical data visualization
             if show_historical:
@@ -240,19 +247,21 @@ def main():
                 if historical_data:
                     # Convert to DataFrame
                     df = pd.DataFrame(historical_data)
-                    df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 'orp_level']
+                    df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 'orp_level', 'conductivity']
                     
                     fig = go.Figure()
                     
                     # Add traces for each sensor
                     fig.add_trace(go.Scatter(x=df['timestamp'], y=df['ph_level'],
-                                           name='pH Level', line=dict(color='blue')))
+                                         name='pH Level', line=dict(color='blue')))
                     fig.add_trace(go.Scatter(x=df['timestamp'], y=df['temperature'],
-                                           name='Temperature', line=dict(color='red')))
+                                         name='Temperature', line=dict(color='red')))
                     fig.add_trace(go.Scatter(x=df['timestamp'], y=df['turbidity'],
-                                           name='Turbidity', line=dict(color='green')))
+                                         name='Turbidity', line=dict(color='green')))
                     fig.add_trace(go.Scatter(x=df['timestamp'], y=df['orp_level'],
-                                           name='ORP Level', line=dict(color='purple')))
+                                         name='ORP Level', line=dict(color='purple')))
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['conductivity'],
+                                         name='Conductivity', line=dict(color='orange')))
                     
                     fig.update_layout(
                         title='Sensor Readings Over Time',
