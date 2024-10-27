@@ -50,11 +50,10 @@ class Database:
 
                     CREATE TABLE sensor_calibration (
                         id SERIAL PRIMARY KEY,
-                        sensor_type VARCHAR(50),
+                        sensor_type VARCHAR(50) UNIQUE,
                         offset_value FLOAT,
                         scale_factor FLOAT,
-                        last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        CONSTRAINT unique_sensor_type_constraint UNIQUE (sensor_type)
+                        last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
 
                     -- Initialize default calibration values if needed
@@ -68,7 +67,7 @@ class Database:
                         ('free_chlorine', 0.0, 1.0),
                         ('total_chlorine', 0.0, 1.0),
                         ('bromine', 0.0, 1.0)
-                    ON CONFLICT ON CONSTRAINT unique_sensor_type_constraint DO NOTHING;
+                    ON CONFLICT (sensor_type) DO NOTHING;
                 """)
         except psycopg2.Error as e:
             raise Exception(f"Database error creating tables: {str(e)}")
@@ -108,7 +107,7 @@ class Database:
                 cur.execute("""
                     INSERT INTO sensor_calibration (sensor_type, offset_value, scale_factor)
                     VALUES (%s, %s, %s)
-                    ON CONFLICT ON CONSTRAINT unique_sensor_type_constraint
+                    ON CONFLICT (sensor_type)
                     DO UPDATE SET 
                         offset_value = EXCLUDED.offset_value,
                         scale_factor = EXCLUDED.scale_factor,
