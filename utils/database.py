@@ -18,16 +18,6 @@ class Database:
         with self.conn.cursor() as cur:
             # Add orp_level column to existing table if it doesn't exist
             cur.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns 
-                        WHERE table_name='sensor_readings' AND column_name='orp_level'
-                    ) THEN
-                        ALTER TABLE sensor_readings ADD COLUMN orp_level FLOAT;
-                    END IF;
-                END $$;
-                
                 CREATE TABLE IF NOT EXISTS sensor_readings (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -39,7 +29,7 @@ class Database:
                 
                 CREATE TABLE IF NOT EXISTS sensor_calibration (
                     id SERIAL PRIMARY KEY,
-                    sensor_type VARCHAR(50),
+                    sensor_type VARCHAR(50) UNIQUE NOT NULL,
                     offset_value FLOAT,
                     scale_factor FLOAT,
                     last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
