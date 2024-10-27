@@ -32,6 +32,43 @@ def init_components():
 
 db, sensor_simulator, alert_system, recommender, maintenance = init_components()
 
+def create_sensor_plot(df, sensor_name, color, y_min, y_max, unit):
+    """Create a touch-optimized plot for a single sensor"""
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=df['timestamp'],
+        y=df[sensor_name],
+        name=sensor_name.replace('_', ' ').title(),
+        line=dict(color=color, width=4),  # Thicker lines for better visibility
+        mode='lines+markers',  # Add markers for better touch targets
+        marker=dict(size=10)  # Larger markers for touch
+    ))
+    
+    fig.update_layout(
+        title=dict(
+            text=f"{sensor_name.replace('_', ' ').title()} ({unit})",
+            font=dict(size=20)  # Larger title font
+        ),
+        height=300,
+        showlegend=False,
+        xaxis=dict(
+            title="Time",
+            title_font=dict(size=16),
+            tickfont=dict(size=14)
+        ),
+        yaxis=dict(
+            title=unit,
+            range=[y_min, y_max],
+            title_font=dict(size=16),
+            tickfont=dict(size=14)
+        ),
+        margin=dict(l=10, r=10, t=40, b=10),
+        dragmode='pan'  # Enable touch-drag to pan
+    )
+    
+    return fig
+
 def render_maintenance_section():
     st.header("🔧 Maintenance")
     
@@ -213,64 +250,50 @@ def main():
                 readings['total_chlorine']
             )
 
-            # Historical visualization
+            # Historical visualization with individual plots
             if show_historical:
-                st.header("📈 History")
-                historical_data = db.get_historical_data(hours=12)  # Changed from 24 to 12 hours
+                st.header("📈 Sensor History (12-Hour)")
+                historical_data = db.get_historical_data(hours=12)
                 
                 if historical_data:
                     df = pd.DataFrame(historical_data)
                     df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 
                                 'orp_level', 'conductivity', 'free_chlorine', 'total_chlorine']
                     
-                    # Create a more touch-friendly graph
-                    fig = go.Figure()
+                    # Sensor configurations with proper ranges and units
+                    sensor_configs = [
+                        ('ph_level', 'blue', 6.0, 8.0, 'pH'),
+                        ('temperature', 'red', 30.0, 45.0, '°C'),
+                        ('turbidity', 'green', 0.0, 10.0, 'NTU'),
+                        ('orp_level', 'purple', 500.0, 900.0, 'mV'),
+                        ('conductivity', 'orange', 0.0, 1200.0, 'ppm'),
+                        ('free_chlorine', 'cyan', 0.0, 5.0, 'ppm'),
+                        ('total_chlorine', 'magenta', 0.0, 6.0, 'ppm')
+                    ]
                     
-                    for col, color in [
-                        ('ph_level', 'blue'),
-                        ('temperature', 'red'),
-                        ('turbidity', 'green'),
-                        ('orp_level', 'purple'),
-                        ('conductivity', 'orange'),
-                        ('free_chlorine', 'cyan'),
-                        ('total_chlorine', 'magenta')
-                    ]:
-                        fig.add_trace(go.Scatter(
-                            x=df['timestamp'],
-                            y=df[col],
-                            name=col.replace('_', ' ').title(),
-                            line=dict(color=color, width=3)
-                        ))
-                    
-                    fig.update_layout(
-                        title='12-Hour History',  # Changed from 24-Hour to 12-Hour
-                        height=400,
-                        hovermode='x unified',
-                        showlegend=True,
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1
-                        ),
-                        margin=dict(l=10, r=10, t=30, b=10)
-                    )
-                    
-                    # Make the plot more touch-friendly
-                    fig.update_layout(
-                        dragmode='pan',  # Enable touch-drag to pan
-                        selectdirection='h',  # Horizontal selection
-                        modebar=dict(orientation='v')  # Vertical modebar
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True, config={
-                        'scrollZoom': True,
-                        'displayModeBar': True,
-                        'modeBarButtonsToRemove': [
-                            'select2d', 'lasso2d', 'resetScale2d'
-                        ]
-                    })
+                    # Create individual plots in expandable sections
+                    for sensor, color, y_min, y_max, unit in sensor_configs:
+                        with st.expander(f"📊 {sensor.replace('_', ' ').title()} Graph", expanded=True):
+                            fig = create_sensor_plot(df, sensor, color, y_min, y_max, unit)
+                            st.plotly_chart(fig, use_container_width=True, config={
+                                'scrollZoom': True,
+                                'displayModeBar': True,
+                                'modeBarButtonsToRemove': [
+                                    'select2d', 'lasso2d', 'resetScale2d',
+                                    'hoverCompareCartesian', 'hoverClosestCartesian'
+                                ],
+                                'displaylogo': False,
+                                'toImageButtonOptions': {'height': 300, 'width': 700}
+                            })
+                            
+                            # Display current range and average
+                            current_value = readings[sensor.replace('_level', '')]
+                            avg_value = df[sensor].mean()
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.info(f"Current: {current_value:.1f} {unit}")
+                            with col2:
+                                st.info(f"Average: {avg_value:.1f} {unit}")
                     
         except Exception as e:
             st.error(f"Error: {str(e)}")
