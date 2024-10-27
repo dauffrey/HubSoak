@@ -95,11 +95,11 @@ def main():
             
             # Add traces for each sensor
             fig.add_trace(go.Scatter(x=df['timestamp'], y=df['ph_level'],
-                                   name='pH Level', line=dict(color='blue')))
+                                    name='pH Level', line=dict(color='blue')))
             fig.add_trace(go.Scatter(x=df['timestamp'], y=df['temperature'],
-                                   name='Temperature', line=dict(color='red')))
+                                    name='Temperature', line=dict(color='red')))
             fig.add_trace(go.Scatter(x=df['timestamp'], y=df['turbidity'],
-                                   name='Turbidity', line=dict(color='green')))
+                                    name='Turbidity', line=dict(color='green')))
             
             fig.update_layout(
                 title='Sensor Readings Over Time',
@@ -113,7 +113,7 @@ def main():
 
     # Auto-refresh
     time.sleep(update_interval)
-    st.experimental_rerun()
+    st.rerun()
 
 if __name__ == "__main__":
     main()
