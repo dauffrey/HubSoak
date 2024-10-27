@@ -13,6 +13,7 @@ class Database:
             host=os.environ['PGHOST'],
             port=os.environ['PGPORT']
         )
+        self._create_tables()
 
     @contextmanager
     def get_cursor(self):
@@ -30,6 +31,7 @@ class Database:
     def _create_tables(self):
         try:
             with self.get_cursor() as cur:
+                # First create the tables if they don't exist
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS sensor_readings (
                         id SERIAL PRIMARY KEY,
@@ -37,8 +39,7 @@ class Database:
                         ph_level FLOAT,
                         temperature FLOAT,
                         turbidity FLOAT,
-                        orp_level FLOAT,
-                        conductivity FLOAT
+                        orp_level FLOAT
                     );
                     
                     CREATE TABLE IF NOT EXISTS sensor_calibration (
@@ -49,8 +50,24 @@ class Database:
                         last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
+                
+                # Now add the conductivity column if it doesn't exist
+                cur.execute("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 
+                            FROM information_schema.columns 
+                            WHERE table_name='sensor_readings' 
+                            AND column_name='conductivity'
+                        ) THEN
+                            ALTER TABLE sensor_readings 
+                            ADD COLUMN conductivity FLOAT DEFAULT 0.0;
+                        END IF;
+                    END $$;
+                """)
         except Exception as e:
-            raise Exception(f"Error creating tables: {str(e)}")
+            raise Exception(f"Error creating/updating tables: {str(e)}")
 
     def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, conductivity: float):
         try:
