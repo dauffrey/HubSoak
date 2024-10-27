@@ -31,7 +31,7 @@ class Database:
     def _create_tables(self):
         try:
             with self.get_cursor() as cur:
-                # First create the tables if they don't exist
+                # Drop and recreate sensor_calibration table
                 cur.execute("""
                     DROP TABLE IF EXISTS sensor_calibration CASCADE;
                     
@@ -47,19 +47,33 @@ class Database:
                         total_chlorine FLOAT DEFAULT 0.0,
                         bromine FLOAT DEFAULT 0.0
                     );
-                    
-                    CREATE TABLE IF NOT EXISTS sensor_calibration (
+
+                    CREATE TABLE sensor_calibration (
                         id SERIAL PRIMARY KEY,
-                        sensor_type VARCHAR(50) NOT NULL,
+                        sensor_type VARCHAR(50),
                         offset_value FLOAT,
                         scale_factor FLOAT,
                         last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        CONSTRAINT unique_sensor_type UNIQUE (sensor_type)
+                        CONSTRAINT unique_sensor_type_constraint UNIQUE (sensor_type)
                     );
+
+                    -- Initialize default calibration values if needed
+                    INSERT INTO sensor_calibration (sensor_type, offset_value, scale_factor)
+                    VALUES 
+                        ('ph', 0.0, 1.0),
+                        ('temperature', 0.0, 1.0),
+                        ('turbidity', 0.0, 1.0),
+                        ('orp', 0.0, 1.0),
+                        ('conductivity', 0.0, 1.0),
+                        ('free_chlorine', 0.0, 1.0),
+                        ('total_chlorine', 0.0, 1.0),
+                        ('bromine', 0.0, 1.0)
+                    ON CONFLICT ON CONSTRAINT unique_sensor_type_constraint DO NOTHING;
                 """)
-                self.conn.commit()
+        except psycopg2.Error as e:
+            raise Exception(f"Database error creating tables: {str(e)}")
         except Exception as e:
-            raise Exception(f"Error creating/updating tables: {str(e)}")
+            raise Exception(f"Unexpected error creating tables: {str(e)}")
 
     def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, conductivity: float, 
                    free_chlorine: float, total_chlorine: float, bromine: float):
@@ -94,14 +108,16 @@ class Database:
                 cur.execute("""
                     INSERT INTO sensor_calibration (sensor_type, offset_value, scale_factor)
                     VALUES (%s, %s, %s)
-                    ON CONFLICT ON CONSTRAINT unique_sensor_type
+                    ON CONFLICT ON CONSTRAINT unique_sensor_type_constraint
                     DO UPDATE SET 
                         offset_value = EXCLUDED.offset_value,
                         scale_factor = EXCLUDED.scale_factor,
                         last_calibrated = CURRENT_TIMESTAMP
-                """, (sensor_type, offset, scale))
+                    """, (sensor_type, offset, scale))
+        except psycopg2.Error as e:
+            raise Exception(f"Database error updating calibration: {str(e)}")
         except Exception as e:
-            raise Exception(f"Error updating calibration: {str(e)}")
+            raise Exception(f"Unexpected error updating calibration: {str(e)}")
 
     def __del__(self):
         """Ensure database connection is closed when object is destroyed."""
