@@ -215,9 +215,9 @@ def main():
                 
             with col5:
                 st.metric(
-                    label="Conductivity",
-                    value=f"{readings['conductivity']:.0f} μS/cm",
-                    delta=f"{readings['conductivity'] - 1500.0:.0f} from ideal"
+                    label="Conductivity/TDS",
+                    value=f"{readings['conductivity']:.0f} ppm",
+                    delta=f"{readings['conductivity'] - 600.0:.0f} from ideal"
                 )
 
             # Process and display alerts
