@@ -51,7 +51,7 @@ class Database:
                     );
                 """)
                 
-                # Now add the conductivity column if it doesn't exist
+                # Add new columns if they don't exist
                 cur.execute("""
                     DO $$
                     BEGIN
@@ -64,19 +64,40 @@ class Database:
                             ALTER TABLE sensor_readings 
                             ADD COLUMN conductivity FLOAT DEFAULT 0.0;
                         END IF;
+
+                        IF NOT EXISTS (
+                            SELECT 1 
+                            FROM information_schema.columns 
+                            WHERE table_name='sensor_readings' 
+                            AND column_name='free_chlorine'
+                        ) THEN
+                            ALTER TABLE sensor_readings 
+                            ADD COLUMN free_chlorine FLOAT DEFAULT 0.0;
+                        END IF;
+
+                        IF NOT EXISTS (
+                            SELECT 1 
+                            FROM information_schema.columns 
+                            WHERE table_name='sensor_readings' 
+                            AND column_name='total_chlorine'
+                        ) THEN
+                            ALTER TABLE sensor_readings 
+                            ADD COLUMN total_chlorine FLOAT DEFAULT 0.0;
+                        END IF;
                     END $$;
                 """)
         except Exception as e:
             raise Exception(f"Error creating/updating tables: {str(e)}")
 
-    def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, conductivity: float):
+    def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, conductivity: float, 
+                   free_chlorine: float, total_chlorine: float):
         try:
             with self.get_cursor() as cur:
                 cur.execute(
                     """INSERT INTO sensor_readings 
-                       (ph_level, temperature, turbidity, orp_level, conductivity) 
-                       VALUES (%s, %s, %s, %s, %s)""",
-                    (ph, temp, turbidity, orp, conductivity)
+                       (ph_level, temperature, turbidity, orp_level, conductivity, free_chlorine, total_chlorine) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                    (ph, temp, turbidity, orp, conductivity, free_chlorine, total_chlorine)
                 )
         except Exception as e:
             raise Exception(f"Error logging sensor reading: {str(e)}")
@@ -85,7 +106,8 @@ class Database:
         try:
             with self.get_cursor() as cur:
                 cur.execute("""
-                    SELECT timestamp, ph_level, temperature, turbidity, orp_level, conductivity 
+                    SELECT timestamp, ph_level, temperature, turbidity, orp_level, conductivity, 
+                           free_chlorine, total_chlorine 
                     FROM sensor_readings 
                     WHERE timestamp > NOW() - INTERVAL '%s hours'
                     ORDER BY timestamp DESC

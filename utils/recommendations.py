@@ -8,13 +8,15 @@ class WaterQualityRecommender:
             'temperature': {'min': 37.0, 'max': 39.0, 'unit': '°C'},
             'turbidity': {'min': 0.5, 'max': 3.0, 'unit': 'NTU'},
             'orp': {'min': 650, 'max': 750, 'unit': 'mV'},
-            'conductivity': {'min': 400, 'max': 800, 'unit': 'ppm'}
+            'conductivity': {'min': 400, 'max': 800, 'unit': 'ppm'},
+            'free_chlorine': {'min': 1.0, 'max': 3.0, 'unit': 'ppm'},
+            'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'}
         }
 
     def get_recommendations(self, readings: Dict[str, float]) -> List[Dict[str, str]]:
         recommendations = []
 
-        # pH recommendations
+        # Previous recommendations code...
         if readings['ph'] < self.optimal_ranges['ph']['min']:
             recommendations.append({
                 'parameter': 'pH',
@@ -30,7 +32,6 @@ class WaterQualityRecommender:
                 'details': 'High pH reduces sanitizer effectiveness and can cause scaling.'
             })
 
-        # Temperature recommendations
         if readings['temperature'] < self.optimal_ranges['temperature']['min']:
             recommendations.append({
                 'parameter': 'Temperature',
@@ -46,7 +47,6 @@ class WaterQualityRecommender:
                 'details': 'High temperature increases chemical consumption and can be uncomfortable.'
             })
 
-        # Turbidity recommendations
         if readings['turbidity'] > self.optimal_ranges['turbidity']['max']:
             recommendations.append({
                 'parameter': 'Turbidity',
@@ -55,7 +55,6 @@ class WaterQualityRecommender:
                 'details': 'High turbidity indicates presence of suspended particles and possible contamination.'
             })
 
-        # ORP recommendations
         if readings['orp'] < self.optimal_ranges['orp']['min']:
             recommendations.append({
                 'parameter': 'ORP',
@@ -71,7 +70,6 @@ class WaterQualityRecommender:
                 'details': 'High ORP may cause skin/eye irritation and equipment damage.'
             })
 
-        # Conductivity/TDS recommendations
         if readings['conductivity'] < self.optimal_ranges['conductivity']['min']:
             recommendations.append({
                 'parameter': 'Conductivity/TDS',
@@ -85,6 +83,32 @@ class WaterQualityRecommender:
                 'status': 'high',
                 'action': 'Partially drain and refill with fresh water to reduce TDS levels.',
                 'details': 'High TDS levels can cause equipment corrosion and reduce sanitizer effectiveness.'
+            })
+
+        # Add chlorine-specific recommendations
+        if readings['free_chlorine'] < self.optimal_ranges['free_chlorine']['min']:
+            recommendations.append({
+                'parameter': 'Free Chlorine',
+                'status': 'low',
+                'action': 'Add chlorine sanitizer to increase free chlorine levels.',
+                'details': 'Low free chlorine reduces sanitizing effectiveness and can lead to bacterial growth.'
+            })
+        elif readings['free_chlorine'] > self.optimal_ranges['free_chlorine']['max']:
+            recommendations.append({
+                'parameter': 'Free Chlorine',
+                'status': 'high',
+                'action': 'Stop adding chlorine and allow levels to naturally decrease. Consider partial water change.',
+                'details': 'High free chlorine can cause skin and eye irritation.'
+            })
+
+        # Calculate and check combined chlorine
+        combined_chlorine = readings['total_chlorine'] - readings['free_chlorine']
+        if combined_chlorine > 0.5:  # Standard threshold for combined chlorine
+            recommendations.append({
+                'parameter': 'Combined Chlorine',
+                'status': 'high',
+                'action': 'Shock treat the water with high dose of chlorine (superchlorination).',
+                'details': 'High combined chlorine indicates presence of chloramines, which can cause odor and irritation.'
             })
 
         # If everything is optimal

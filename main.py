@@ -164,7 +164,10 @@ def main():
         show_historical = st.checkbox("Show Historical Data", True)
         
         st.header("Sensor Calibration")
-        sensor_type = st.selectbox("Select Sensor", ["ph", "temperature", "turbidity", "orp", "conductivity"])
+        sensor_type = st.selectbox(
+            "Select Sensor", 
+            ["ph", "temperature", "turbidity", "orp", "conductivity", "free_chlorine", "total_chlorine"]
+        )
         offset = st.number_input(f"{sensor_type.title()} Offset", -10.0, 10.0, 0.0, 0.1)
         scale = st.number_input(f"{sensor_type.title()} Scale Factor", 0.1, 2.0, 1.0, 0.1)
         
@@ -177,7 +180,7 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Monitoring", "Maintenance", "Remote Access"])
     
     with tab1:
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
         
         try:
             # Get current readings
@@ -220,6 +223,20 @@ def main():
                     delta=f"{readings['conductivity'] - 600.0:.0f} from ideal"
                 )
 
+            with col6:
+                st.metric(
+                    label="Free Chlorine",
+                    value=f"{readings['free_chlorine']:.1f} ppm",
+                    delta=f"{readings['free_chlorine'] - 2.0:.1f} from ideal"
+                )
+
+            with col7:
+                st.metric(
+                    label="Total Chlorine",
+                    value=f"{readings['total_chlorine']:.1f} ppm",
+                    delta=f"{readings['total_chlorine'] - 3.0:.1f} from ideal"
+                )
+
             # Process and display alerts
             current_alerts = alert_system.process_alerts(alerts)
             alert_system.display_alerts()
@@ -237,7 +254,11 @@ def main():
                         st.info(f"**Details:** {rec['details']}")
 
             # Log readings to database
-            db.log_reading(readings['ph'], readings['temperature'], readings['turbidity'], readings['orp'], readings['conductivity'])
+            db.log_reading(
+                readings['ph'], readings['temperature'], readings['turbidity'],
+                readings['orp'], readings['conductivity'], readings['free_chlorine'],
+                readings['total_chlorine']
+            )
 
             # Historical data visualization
             if show_historical:
@@ -247,7 +268,8 @@ def main():
                 if historical_data:
                     # Convert to DataFrame
                     df = pd.DataFrame(historical_data)
-                    df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 'orp_level', 'conductivity']
+                    df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 
+                                'orp_level', 'conductivity', 'free_chlorine', 'total_chlorine']
                     
                     fig = go.Figure()
                     
@@ -262,6 +284,10 @@ def main():
                                          name='ORP Level', line=dict(color='purple')))
                     fig.add_trace(go.Scatter(x=df['timestamp'], y=df['conductivity'],
                                          name='Conductivity', line=dict(color='orange')))
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['free_chlorine'],
+                                         name='Free Chlorine', line=dict(color='cyan')))
+                    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['total_chlorine'],
+                                         name='Total Chlorine', line=dict(color='magenta')))
                     
                     fig.update_layout(
                         title='Sensor Readings Over Time',
