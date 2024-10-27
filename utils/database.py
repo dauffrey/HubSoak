@@ -48,7 +48,8 @@ class Database:
                         conductivity FLOAT DEFAULT 0.0,
                         free_chlorine FLOAT DEFAULT 0.0,
                         total_chlorine FLOAT DEFAULT 0.0,
-                        bromine FLOAT DEFAULT 0.0
+                        bromine FLOAT DEFAULT 0.0,
+                        uv_intensity FLOAT DEFAULT 0.0
                     );
 
                     -- Create sensor calibration table with unique constraint
@@ -70,7 +71,8 @@ class Database:
                         ('conductivity', 0.0, 1.0),
                         ('free_chlorine', 0.0, 1.0),
                         ('total_chlorine', 0.0, 1.0),
-                        ('bromine', 0.0, 1.0)
+                        ('bromine', 0.0, 1.0),
+                        ('uv_intensity', 0.0, 1.0)
                     ON CONFLICT (sensor_type) 
                     DO UPDATE SET 
                         offset_value = EXCLUDED.offset_value,
@@ -84,17 +86,17 @@ class Database:
 
     def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, 
                    conductivity: float, free_chlorine: float, total_chlorine: float, 
-                   bromine: float):
+                   bromine: float, uv_intensity: float):
         """Log a sensor reading to the database."""
         try:
             with self.get_cursor() as cur:
                 cur.execute(
                     """INSERT INTO sensor_readings 
                        (ph_level, temperature, turbidity, orp_level, conductivity, 
-                        free_chlorine, total_chlorine, bromine) 
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                        free_chlorine, total_chlorine, bromine, uv_intensity) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                     (ph, temp, turbidity, orp, conductivity, free_chlorine, 
-                     total_chlorine, bromine)
+                     total_chlorine, bromine, uv_intensity)
                 )
         except Exception as e:
             raise Exception(f"Error logging sensor reading: {str(e)}")
@@ -105,7 +107,8 @@ class Database:
             with self.get_cursor() as cur:
                 cur.execute("""
                     SELECT timestamp, ph_level, temperature, turbidity, orp_level, 
-                           conductivity, free_chlorine, total_chlorine, bromine
+                           conductivity, free_chlorine, total_chlorine, bromine,
+                           uv_intensity
                     FROM sensor_readings 
                     WHERE timestamp > NOW() - INTERVAL '%s hours'
                     ORDER BY timestamp DESC

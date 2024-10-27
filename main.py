@@ -168,7 +168,7 @@ def main():
         sensor_type = st.selectbox(
             "Sensor", 
             ["ph", "temperature", "turbidity", "orp", "conductivity", 
-             "free_chlorine", "total_chlorine", "bromine"]
+             "free_chlorine", "total_chlorine", "bromine", "uv_intensity"]
         )
         offset = st.number_input(f"Offset", -10.0, 10.0, 0.0, 0.1)
         scale = st.number_input(f"Scale", 0.1, 2.0, 1.0, 0.1)
@@ -193,7 +193,7 @@ def main():
             # Update timestamp
             last_update.info(f"🔄 Last Update: {datetime.now().strftime('%H:%M:%S')}")
             
-            # Display readings in 2x4 grid for better touch interaction
+            # Display readings in 2x5 grid for better touch interaction
             col1, col2 = st.columns(2)
             
             with col1:
@@ -216,6 +216,11 @@ def main():
                     "ORP Level",
                     f"{readings['orp']:.0f} mV",
                     f"{readings['orp'] - 700.0:.0f}"
+                )
+                st.metric(
+                    "UV Intensity",
+                    f"{readings['uv_intensity']:.1f} mW/cm²",
+                    f"{readings['uv_intensity'] - 25.0:.1f}"
                 )
             
             with col2:
@@ -260,7 +265,7 @@ def main():
             db.log_reading(
                 readings['ph'], readings['temperature'], readings['turbidity'],
                 readings['orp'], readings['conductivity'], readings['free_chlorine'],
-                readings['total_chlorine'], readings['bromine']
+                readings['total_chlorine'], readings['bromine'], readings['uv_intensity']
             )
 
             # Historical visualization with individual plots
@@ -272,7 +277,7 @@ def main():
                     df = pd.DataFrame(historical_data)
                     df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 
                                 'orp_level', 'conductivity', 'free_chlorine', 
-                                'total_chlorine', 'bromine']
+                                'total_chlorine', 'bromine', 'uv_intensity']
                     
                     # Sensor configurations with proper ranges and units
                     sensor_configs = [
@@ -283,7 +288,8 @@ def main():
                         ('conductivity', 'orange', 0.0, 1200.0, 'ppm'),
                         ('bromine', 'brown', 0.0, 8.0, 'ppm'),
                         ('free_chlorine', 'cyan', 0.0, 5.0, 'ppm'),
-                        ('total_chlorine', 'magenta', 0.0, 6.0, 'ppm')
+                        ('total_chlorine', 'magenta', 0.0, 6.0, 'ppm'),
+                        ('uv_intensity', 'black', 0.0, 50.0, 'mW/cm²')
                     ]
                     
                     # Create individual plots in expandable sections

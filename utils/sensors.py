@@ -12,7 +12,8 @@ class SensorSimulator:
             'conductivity': {'offset': 0.0, 'scale': 1.0},
             'free_chlorine': {'offset': 0.0, 'scale': 1.0},
             'total_chlorine': {'offset': 0.0, 'scale': 1.0},
-            'bromine': {'offset': 0.0, 'scale': 1.0}
+            'bromine': {'offset': 0.0, 'scale': 1.0},
+            'uv_intensity': {'offset': 0.0, 'scale': 1.0}
         }
 
     def get_readings(self) -> Dict[str, float]:
@@ -25,7 +26,8 @@ class SensorSimulator:
             'conductivity': random.uniform(200.0, 1000.0),  # TDS in ppm
             'free_chlorine': random.uniform(1.0, 5.0),  # Free chlorine in ppm
             'total_chlorine': random.uniform(2.0, 6.0),  # Total chlorine in ppm
-            'bromine': random.uniform(2.0, 6.0)  # Bromine in ppm (typical range 2-6 ppm)
+            'bromine': random.uniform(2.0, 6.0),  # Bromine in ppm
+            'uv_intensity': random.uniform(15.0, 40.0)  # UV intensity in mW/cm²
         }
 
         # Ensure total chlorine is always higher than free chlorine
@@ -59,7 +61,8 @@ class SensorSimulator:
             'conductivity': {'min': 200.0, 'max': 1000.0, 'unit': 'ppm'},
             'free_chlorine': {'min': 1.0, 'max': 3.0, 'unit': 'ppm'},
             'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'},
-            'bromine': {'min': 2.0, 'max': 6.0, 'unit': 'ppm'}  # Bromine threshold (2-6 ppm is ideal)
+            'bromine': {'min': 2.0, 'max': 6.0, 'unit': 'ppm'},
+            'uv_intensity': {'min': 20.0, 'max': 35.0, 'unit': 'mW/cm²'}
         }
 
         for sensor, value in readings.items():

@@ -11,7 +11,8 @@ class WaterQualityRecommender:
             'conductivity': {'min': 400, 'max': 800, 'unit': 'ppm'},
             'free_chlorine': {'min': 1.0, 'max': 3.0, 'unit': 'ppm'},
             'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'},
-            'bromine': {'min': 2.0, 'max': 6.0, 'unit': 'ppm'}
+            'bromine': {'min': 2.0, 'max': 6.0, 'unit': 'ppm'},
+            'uv_intensity': {'min': 20.0, 'max': 35.0, 'unit': 'mW/cm²'}
         }
 
     def get_recommendations(self, readings: Dict[str, float]) -> List[Dict[str, str]]:
@@ -100,6 +101,22 @@ class WaterQualityRecommender:
                 'status': 'high',
                 'action': 'Stop adding bromine and allow levels to naturally decrease. Consider partial water change.',
                 'details': 'High bromine levels can cause skin and eye irritation.'
+            })
+
+        # Add UV system recommendations
+        if readings['uv_intensity'] < self.optimal_ranges['uv_intensity']['min']:
+            recommendations.append({
+                'parameter': 'UV System',
+                'status': 'low',
+                'action': 'Clean UV lamp and quartz sleeve. Check lamp age and replace if over 12 months old.',
+                'details': 'Low UV intensity reduces sterilization effectiveness. Could be due to mineral buildup or aging lamp.'
+            })
+        elif readings['uv_intensity'] > self.optimal_ranges['uv_intensity']['max']:
+            recommendations.append({
+                'parameter': 'UV System',
+                'status': 'high',
+                'action': 'Check UV sensor calibration and verify proper lamp wattage.',
+                'details': 'Unusually high UV readings may indicate sensor calibration issues.'
             })
 
         # If everything is optimal
