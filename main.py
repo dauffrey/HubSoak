@@ -167,7 +167,7 @@ def main():
         sensor_type = st.selectbox(
             "Sensor", 
             ["ph", "temperature", "turbidity", "orp", "conductivity", 
-             "free_chlorine", "total_chlorine"]
+             "free_chlorine", "total_chlorine", "bromine"]
         )
         offset = st.number_input(f"Offset", -10.0, 10.0, 0.0, 0.1)
         scale = st.number_input(f"Scale", 0.1, 2.0, 1.0, 0.1)
@@ -217,6 +217,11 @@ def main():
                     f"{readings['conductivity'] - 600.0:.0f}"
                 )
                 st.metric(
+                    "Bromine",  # Added Bromine reading
+                    f"{readings['bromine']:.1f} ppm",
+                    f"{readings['bromine'] - 4.0:.1f}"  # Target of 4.0 ppm
+                )
+                st.metric(
                     "Free Chlorine",
                     f"{readings['free_chlorine']:.1f} ppm",
                     f"{readings['free_chlorine'] - 2.0:.1f}"
@@ -247,7 +252,7 @@ def main():
             db.log_reading(
                 readings['ph'], readings['temperature'], readings['turbidity'],
                 readings['orp'], readings['conductivity'], readings['free_chlorine'],
-                readings['total_chlorine']
+                readings['total_chlorine'], readings['bromine']
             )
 
             # Historical visualization with individual plots
@@ -258,7 +263,8 @@ def main():
                 if historical_data:
                     df = pd.DataFrame(historical_data)
                     df.columns = ['timestamp', 'ph_level', 'temperature', 'turbidity', 
-                                'orp_level', 'conductivity', 'free_chlorine', 'total_chlorine']
+                                'orp_level', 'conductivity', 'free_chlorine', 
+                                'total_chlorine', 'bromine']
                     
                     # Sensor configurations with proper ranges and units
                     sensor_configs = [
@@ -267,6 +273,7 @@ def main():
                         ('turbidity', 'green', 0.0, 10.0, 'NTU'),
                         ('orp_level', 'purple', 500.0, 900.0, 'mV'),
                         ('conductivity', 'orange', 0.0, 1200.0, 'ppm'),
+                        ('bromine', 'brown', 0.0, 8.0, 'ppm'),  # Added Bromine plot
                         ('free_chlorine', 'cyan', 0.0, 5.0, 'ppm'),
                         ('total_chlorine', 'magenta', 0.0, 6.0, 'ppm')
                     ]

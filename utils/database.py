@@ -84,20 +84,30 @@ class Database:
                             ALTER TABLE sensor_readings 
                             ADD COLUMN total_chlorine FLOAT DEFAULT 0.0;
                         END IF;
+
+                        IF NOT EXISTS (
+                            SELECT 1 
+                            FROM information_schema.columns 
+                            WHERE table_name='sensor_readings' 
+                            AND column_name='bromine'
+                        ) THEN
+                            ALTER TABLE sensor_readings 
+                            ADD COLUMN bromine FLOAT DEFAULT 0.0;
+                        END IF;
                     END $$;
                 """)
         except Exception as e:
             raise Exception(f"Error creating/updating tables: {str(e)}")
 
     def log_reading(self, ph: float, temp: float, turbidity: float, orp: float, conductivity: float, 
-                   free_chlorine: float, total_chlorine: float):
+                   free_chlorine: float, total_chlorine: float, bromine: float):
         try:
             with self.get_cursor() as cur:
                 cur.execute(
                     """INSERT INTO sensor_readings 
-                       (ph_level, temperature, turbidity, orp_level, conductivity, free_chlorine, total_chlorine) 
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                    (ph, temp, turbidity, orp, conductivity, free_chlorine, total_chlorine)
+                       (ph_level, temperature, turbidity, orp_level, conductivity, free_chlorine, total_chlorine, bromine) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (ph, temp, turbidity, orp, conductivity, free_chlorine, total_chlorine, bromine)
                 )
         except Exception as e:
             raise Exception(f"Error logging sensor reading: {str(e)}")
@@ -107,7 +117,7 @@ class Database:
             with self.get_cursor() as cur:
                 cur.execute("""
                     SELECT timestamp, ph_level, temperature, turbidity, orp_level, conductivity, 
-                           free_chlorine, total_chlorine 
+                           free_chlorine, total_chlorine, bromine 
                     FROM sensor_readings 
                     WHERE timestamp > NOW() - INTERVAL '%s hours'
                     ORDER BY timestamp DESC

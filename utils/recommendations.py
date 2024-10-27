@@ -10,7 +10,8 @@ class WaterQualityRecommender:
             'orp': {'min': 650, 'max': 750, 'unit': 'mV'},
             'conductivity': {'min': 400, 'max': 800, 'unit': 'ppm'},
             'free_chlorine': {'min': 1.0, 'max': 3.0, 'unit': 'ppm'},
-            'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'}
+            'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'},
+            'bromine': {'min': 2.0, 'max': 6.0, 'unit': 'ppm'}
         }
 
     def get_recommendations(self, readings: Dict[str, float]) -> List[Dict[str, str]]:
@@ -85,30 +86,20 @@ class WaterQualityRecommender:
                 'details': 'High TDS levels can cause equipment corrosion and reduce sanitizer effectiveness.'
             })
 
-        # Add chlorine-specific recommendations
-        if readings['free_chlorine'] < self.optimal_ranges['free_chlorine']['min']:
+        # Add bromine-specific recommendations
+        if readings['bromine'] < self.optimal_ranges['bromine']['min']:
             recommendations.append({
-                'parameter': 'Free Chlorine',
+                'parameter': 'Bromine',
                 'status': 'low',
-                'action': 'Add chlorine sanitizer to increase free chlorine levels.',
-                'details': 'Low free chlorine reduces sanitizing effectiveness and can lead to bacterial growth.'
+                'action': 'Add sodium bromide and activate with oxidizer. Test after 2 hours.',
+                'details': 'Low bromine levels reduce sanitizing effectiveness and can lead to bacterial growth.'
             })
-        elif readings['free_chlorine'] > self.optimal_ranges['free_chlorine']['max']:
+        elif readings['bromine'] > self.optimal_ranges['bromine']['max']:
             recommendations.append({
-                'parameter': 'Free Chlorine',
+                'parameter': 'Bromine',
                 'status': 'high',
-                'action': 'Stop adding chlorine and allow levels to naturally decrease. Consider partial water change.',
-                'details': 'High free chlorine can cause skin and eye irritation.'
-            })
-
-        # Calculate and check combined chlorine
-        combined_chlorine = readings['total_chlorine'] - readings['free_chlorine']
-        if combined_chlorine > 0.5:  # Standard threshold for combined chlorine
-            recommendations.append({
-                'parameter': 'Combined Chlorine',
-                'status': 'high',
-                'action': 'Shock treat the water with high dose of chlorine (superchlorination).',
-                'details': 'High combined chlorine indicates presence of chloramines, which can cause odor and irritation.'
+                'action': 'Stop adding bromine and allow levels to naturally decrease. Consider partial water change.',
+                'details': 'High bromine levels can cause skin and eye irritation.'
             })
 
         # If everything is optimal

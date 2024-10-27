@@ -11,7 +11,8 @@ class SensorSimulator:
             'orp': {'offset': 0.0, 'scale': 1.0},
             'conductivity': {'offset': 0.0, 'scale': 1.0},
             'free_chlorine': {'offset': 0.0, 'scale': 1.0},
-            'total_chlorine': {'offset': 0.0, 'scale': 1.0}
+            'total_chlorine': {'offset': 0.0, 'scale': 1.0},
+            'bromine': {'offset': 0.0, 'scale': 1.0}
         }
 
     def get_readings(self) -> Dict[str, float]:
@@ -23,7 +24,8 @@ class SensorSimulator:
             'orp': random.uniform(650.0, 750.0),  # ORP in millivolts (mV)
             'conductivity': random.uniform(200.0, 1000.0),  # TDS in ppm
             'free_chlorine': random.uniform(1.0, 5.0),  # Free chlorine in ppm
-            'total_chlorine': random.uniform(2.0, 6.0)  # Total chlorine in ppm
+            'total_chlorine': random.uniform(2.0, 6.0),  # Total chlorine in ppm
+            'bromine': random.uniform(2.0, 6.0)  # Bromine in ppm (typical range 2-6 ppm)
         }
 
         # Ensure total chlorine is always higher than free chlorine
@@ -56,7 +58,8 @@ class SensorSimulator:
             'orp': {'min': 650.0, 'max': 750.0, 'unit': 'mV'},
             'conductivity': {'min': 200.0, 'max': 1000.0, 'unit': 'ppm'},
             'free_chlorine': {'min': 1.0, 'max': 3.0, 'unit': 'ppm'},
-            'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'}
+            'total_chlorine': {'min': 2.0, 'max': 4.0, 'unit': 'ppm'},
+            'bromine': {'min': 2.0, 'max': 6.0, 'unit': 'ppm'}  # Bromine threshold (2-6 ppm is ideal)
         }
 
         for sensor, value in readings.items():
@@ -69,10 +72,11 @@ class SensorSimulator:
                 alerts[sensor] = (False, f"{sensor.replace('_', ' ').title()} normal: {value:.1f} {threshold['unit']}")
 
         # Add combined chlorine alert
-        combined_chlorine = readings['total_chlorine'] - readings['free_chlorine']
-        if combined_chlorine > 0.5:  # Standard threshold for combined chlorine
-            alerts['combined_chlorine'] = (True, f"Combined Chlorine high: {combined_chlorine:.1f} ppm")
-        else:
-            alerts['combined_chlorine'] = (False, f"Combined Chlorine normal: {combined_chlorine:.1f} ppm")
+        if 'total_chlorine' in readings and 'free_chlorine' in readings:
+            combined_chlorine = readings['total_chlorine'] - readings['free_chlorine']
+            if combined_chlorine > 0.5:  # Standard threshold for combined chlorine
+                alerts['combined_chlorine'] = (True, f"Combined Chlorine high: {combined_chlorine:.1f} ppm")
+            else:
+                alerts['combined_chlorine'] = (False, f"Combined Chlorine normal: {combined_chlorine:.1f} ppm")
 
         return alerts
