@@ -33,6 +33,8 @@ class Database:
             with self.get_cursor() as cur:
                 # First create the tables if they don't exist
                 cur.execute("""
+                    DROP TABLE IF EXISTS sensor_calibration CASCADE;
+                    
                     CREATE TABLE IF NOT EXISTS sensor_readings (
                         id SERIAL PRIMARY KEY,
                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -48,27 +50,12 @@ class Database:
                     
                     CREATE TABLE IF NOT EXISTS sensor_calibration (
                         id SERIAL PRIMARY KEY,
-                        sensor_type VARCHAR(50) UNIQUE NOT NULL,
+                        sensor_type VARCHAR(50) NOT NULL,
                         offset_value FLOAT,
                         scale_factor FLOAT,
-                        last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        last_calibrated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT unique_sensor_type UNIQUE (sensor_type)
                     );
-                """)
-                
-                # Force recreation of bromine column if it doesn't exist
-                cur.execute("""
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 
-                            FROM information_schema.columns 
-                            WHERE table_name='sensor_readings' 
-                            AND column_name='bromine'
-                        ) THEN
-                            ALTER TABLE sensor_readings 
-                            ADD COLUMN bromine FLOAT DEFAULT 0.0;
-                        END IF;
-                    END $$;
                 """)
                 self.conn.commit()
         except Exception as e:
@@ -107,9 +94,12 @@ class Database:
                 cur.execute("""
                     INSERT INTO sensor_calibration (sensor_type, offset_value, scale_factor)
                     VALUES (%s, %s, %s)
-                    ON CONFLICT (sensor_type) DO UPDATE 
-                    SET offset_value = %s, scale_factor = %s, last_calibrated = CURRENT_TIMESTAMP
-                """, (sensor_type, offset, scale, offset, scale))
+                    ON CONFLICT ON CONSTRAINT unique_sensor_type
+                    DO UPDATE SET 
+                        offset_value = EXCLUDED.offset_value,
+                        scale_factor = EXCLUDED.scale_factor,
+                        last_calibrated = CURRENT_TIMESTAMP
+                """, (sensor_type, offset, scale))
         except Exception as e:
             raise Exception(f"Error updating calibration: {str(e)}")
 

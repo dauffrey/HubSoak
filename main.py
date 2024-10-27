@@ -160,7 +160,8 @@ def main():
     # Sidebar with larger touch targets
     with st.sidebar:
         st.header("⚙️ Controls")
-        update_interval = st.slider("Update Speed", 1, 60, 5)
+        update_interval = st.slider("Update Speed (seconds)", min_value=1, max_value=60, value=5, 
+                                  help="How often to update sensor readings (minimum 1 second)")
         show_historical = st.checkbox("📈 Show History", True)
         
         st.header("🎯 Calibration")
@@ -182,8 +183,15 @@ def main():
     
     with tab1:
         try:
+            # Add update timestamp indicator
+            last_update = st.empty()
+            
+            # Get and display readings
             readings = sensor_simulator.get_readings()
             alerts = sensor_simulator.check_alerts(readings)
+            
+            # Update timestamp
+            last_update.info(f"🔄 Last Update: {datetime.now().strftime('%H:%M:%S')}")
             
             # Display readings in 2x4 grid for better touch interaction
             col1, col2 = st.columns(2)
@@ -217,9 +225,9 @@ def main():
                     f"{readings['conductivity'] - 600.0:.0f}"
                 )
                 st.metric(
-                    "Bromine",  # Added Bromine reading
+                    "Bromine",
                     f"{readings['bromine']:.1f} ppm",
-                    f"{readings['bromine'] - 4.0:.1f}"  # Target of 4.0 ppm
+                    f"{readings['bromine'] - 4.0:.1f}"
                 )
                 st.metric(
                     "Free Chlorine",
@@ -273,7 +281,7 @@ def main():
                         ('turbidity', 'green', 0.0, 10.0, 'NTU'),
                         ('orp_level', 'purple', 500.0, 900.0, 'mV'),
                         ('conductivity', 'orange', 0.0, 1200.0, 'ppm'),
-                        ('bromine', 'brown', 0.0, 8.0, 'ppm'),  # Added Bromine plot
+                        ('bromine', 'brown', 0.0, 8.0, 'ppm'),
                         ('free_chlorine', 'cyan', 0.0, 5.0, 'ppm'),
                         ('total_chlorine', 'magenta', 0.0, 6.0, 'ppm')
                     ]
@@ -301,6 +309,10 @@ def main():
                                 st.info(f"Current: {current_value:.1f} {unit}")
                             with col2:
                                 st.info(f"Average: {avg_value:.1f} {unit}")
+                    
+            # Add automatic refresh based on update_interval
+            time.sleep(update_interval)
+            st.rerun()
                     
         except Exception as e:
             st.error(f"Error: {str(e)}")
